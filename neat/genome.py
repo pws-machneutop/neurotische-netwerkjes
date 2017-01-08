@@ -29,6 +29,14 @@ class ConnectionGene():
     def __repr__(self):
         return "Connection(Node %r => Node %r, Weight %f, %s)" \
             % (self.source.nodeId, self.sink.nodeId, self.weight, "Enabled" if self.enabled else "Disabled")
+    def __eq__(self, other):
+        return self.unique == other.unique
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.unique)
 
 class Genome():
     def __init__(self, nodes=None, connections=None):
