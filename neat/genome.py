@@ -1,5 +1,6 @@
 import random
 import math
+import copy
 from .nodetype import NodeType
 
 GLOBAL_INNOVATION = 1
@@ -58,4 +59,7 @@ class Genome():
         connection = ConnectionGene(source, sink, weight, unique, enabled)
         self.connections[connection.unique] = connection
         GLOBAL_INNOVATION += 1
+
+    def copy(self):
+        return copy.deepcopy(self)
 
