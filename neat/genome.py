@@ -5,6 +5,7 @@ from statistics import mean
 from .nodetype import NodeType
 
 GLOBAL_INNOVATION = 1
+GLOBAL_NODES = 1
 
 class NodeGene():
     def __init__(self, nodeId, nodeType, activationFunction = lambda x: (1/(1+math.exp(-x)))):
