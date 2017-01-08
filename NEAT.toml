@@ -1,0 +1,22 @@
+[compatibility]
+excess = 1.0
+disjoint = 1.0
+weights = 0.4
+
+[speciation]
+species_difference = 3.0
+stagnation_threshold = 15
+champion_threshold = 5
+
+[rates]
+perturbation = 0.9
+mutation = 0.8
+randomset = 0.1
+disabled_inherit = 0.75
+crossover = 0.75
+interspecies = 0.001
+newnode = 0.03
+newlink = 0.05
+
+[pool]
+population = 150
