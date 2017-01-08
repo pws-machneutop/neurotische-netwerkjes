@@ -51,8 +51,8 @@ class Network():
         self.nodes = dict(self.createNodes(genome))
 
     def createNodes(self, genome):
-        for nGene in genome.nodes:
-            connections = filter(lambda c: c.sink == nGene or c.source == nGene, genome.connections)
+        for nGene in genome.nodes.values():
+            connections = filter(lambda c: c.sink == nGene or c.source == nGene, genome.connections.values())
             node = Node(nGene, list(connections))
             yield (node.nodeId, node)
 
