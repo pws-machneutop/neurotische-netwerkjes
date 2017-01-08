@@ -40,17 +40,21 @@ class ConnectionGene():
 
 class Genome():
     def __init__(self, nodes=None, connections=None):
-        self.nodes = nodes or []
-        self.connections = connections or []
+        self.nodes = {node.nodeId:node for node in (nodes or [])}
+        self.connections = {connection.unique:connection for connection in (connections or [])}
 
     def addNode(self, node):
-        self.nodes.append(node)
+        self.nodes[node.nodeId] = node
 
     def node(self, nodeId):
-        return [node for node in self.nodes if node.nodeId == nodeId][0]
+        return self.nodes.get(nodeId, False)
+
+    def connection(self, unique):
+        return self.connections.get(unique, False)
 
     def addConnection(self, source, sink, weight=None, unique=None, enabled=None):
         global GLOBAL_INNOVATION
-        self.connections.append(ConnectionGene(source, sink, weight, unique, enabled))
+        connection = ConnectionGene(source, sink, weight, unique, enabled)
+        self.connections[connection.unique] = connection
         GLOBAL_INNOVATION += 1
 
