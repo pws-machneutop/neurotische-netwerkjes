@@ -27,8 +27,9 @@ class ConnectionGene():
         self.enabled = enabled or True
 
     def __repr__(self):
-        return "Connection(Node %r => Node %r, Weight %f, %s)" \
-            % (self.source.nodeId, self.sink.nodeId, self.weight, "Enabled" if self.enabled else "Disabled")
+        return "Connection(#%d, Node %r => Node %r, Weight %f, %s)" \
+            % (self.unique, self.source.nodeId, self.sink.nodeId, self.weight, "Enabled" if self.enabled else "Disabled")
+
     def __eq__(self, other):
         return self.unique == other.unique
 
