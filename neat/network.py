@@ -6,10 +6,12 @@ class Node():
     def __init__(self, nodeGene, connections):
         self.nodeType = nodeGene.nodeType
         self.nodeId = nodeGene.nodeId
-        self.weights = {conn.sink:conn.weight for conn in connections if conn.enabled and conn.source == self}
+        self.weights = {conn.sink:conn.weight for conn in connections
+                        if conn.enabled and conn.source == self}
         self.activationFunction = nodeGene.activationFunction
         self.connections = connections
-        self.dependencies = {conn.source.nodeId for conn in connections if conn.sink == self}
+        self.dependencies = {conn.source.nodeId for conn in connections
+                             if conn.sink == self}
 
     def __eq__(self, other):
         if (self.nodeId == other.nodeId) and (self.nodeType == other.nodeType):
@@ -43,8 +45,10 @@ class Node():
 
     def __repr__(self):
         if self.nodeType in (NodeType.SENSOR, NodeType.BIAS):
-            return "Node(#%r, %r, %r)" % (self.nodeId, self.nodeType, self.weights)
-        return "Node(#%r, %r, %s, %r)" % (self.nodeId, self.nodeType, self.activationFunction.__name__, self.weights)
+            return "Node(#%r, %r, %r)" % (self.nodeId, self.nodeType,
+                    self.weights)
+        return "Node(#%r, %r, %s, %r)" % (self.nodeId, self.nodeType,
+                self.activationFunction.__name__, self.weights)
 
 class Network():
     def __init__(self, genome):
@@ -52,7 +56,8 @@ class Network():
 
     def createNodes(self, genome):
         for nGene in genome.nodes.values():
-            connections = filter(lambda c: c.sink == nGene or c.source == nGene, genome.connections.values())
+            connections = [c for c in genome.connections.values()
+                    if c.sink == nGene or c.source == nGene]
             node = Node(nGene, list(connections))
             yield (node.nodeId, node)
 
@@ -74,5 +79,3 @@ class Network():
         sys.stdout.write("\n")
 
         return {-key:val for key, val in output_pool.items() if key < 0}
-
-
