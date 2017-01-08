@@ -1,6 +1,7 @@
 import random
 import math
 import copy
+from statistics import mean
 from .nodetype import NodeType
 
 GLOBAL_INNOVATION = 1
@@ -62,4 +63,25 @@ class Genome():
 
     def copy(self):
         return copy.deepcopy(self)
+
+    def distance(self, other, c_1 = 1.0, c_2 = 1.0, c_3 = 0.4):
+        # d = c_1*E/N + c_2*D/N + c_3 * W
+        nGenes = (len(self.connections), len(other.connections))
+
+        N = 1 if max(nGenes) < 20 else max(nGenes)
+
+        # Gene uniques below this threshold are disjoint. Uniques higher than this threshold are excess.
+        excessThresh = min(max(unique for unique in self.connections.keys()), max(unique for unique in other.connections.keys()))
+
+        matchingGenes = {gene: other.connection(gene.unique) for gene in self.connections.values() if other.connection(gene.unique)}
+
+        weightDiff = mean([abs(a.weight - b.weight) for a,b in matchingGenes.items()])
+
+        otherGenes    = set(self.connections.values()) ^ set(other.connections.values())
+
+        disjoints = {gene for gene in otherGenes if gene.unique > excessThresh}
+        excesses  = otherGenes - disjoints
+
+        return (c_1 * len(excesses) + c_2 * len(disjoints)) / N + c_3 * weightDiff
+
 
