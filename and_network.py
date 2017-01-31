@@ -2,15 +2,9 @@ from neat.genome import NodeGene, ConnectionGene, Genome
 from neat.network import Node, Network
 from neat.nodetype import NodeType
 
-genome = Genome([
-                                    NodeGene(4, NodeType.HIDDEN),
-    NodeGene(1, NodeType.SENSOR),   NodeGene(5, NodeType.HIDDEN),
-    NodeGene(2, NodeType.SENSOR),                                   NodeGene(8, NodeType.OUTPUT),
-    NodeGene(3, NodeType.BIAS),     NodeGene(6, NodeType.HIDDEN),
-                                    NodeGene(7, NodeType.BIAS)
-
-    ])
-
+genome = Genome([NodeGene(NodeType.SENSOR), NodeGene(NodeType.SENSOR), NodeGene(NodeType.BIAS),
+                 NodeGene(NodeType.HIDDEN), NodeGene(NodeType.HIDDEN),
+                 NodeGene(NodeType.HIDDEN), NodeGene(NodeType.BIAS), NodeGene(NodeType.OUTPUT)])
 
 x_1 = genome.node(1)
 x_2 = genome.node(2)
@@ -44,22 +38,25 @@ if __name__ == "__main__":
     print("Python runner written by Sam van Kampen")
     print("Source: https://github.com/pws-machneutop/neurotische-netwerkjes\n")
 
-    print("Network topology (I input B bias H hidden O output): \n")
-    print("\t4(H)")
-    print("1(I)\t5(H)")
-    print("2(I)\t\t8(O)")
-    print("3(B)\t6(H)")
-    print("\t7(B)\n\n")
+    #print("Network topology (I input B bias H hidden O output): \n")
+    #print("\t4(H)")
+    #print("1(I)\t5(H)")
+    #print("2(I)\t\t8(O)")
+    #print("3(B)\t6(H)")
+    #print("\t7(B)\n\n")
 
-    print("Connectivity: ")
-    for connection in genome.connections:
-        print(connection)
-    print("")
+    #for _,node in genome.nodes.items():
+    #    print(node)
+
+    #print("Connectivity: ")
+    #for _, connection in genome.connections.items():
+    #    print(connection)
+    #print("")
 
     inputs = [(0,0),(1,0),(0,1),(1,1)]
     for input in inputs:
         print("Input: %r" % (input,))
-        output = network.runWith({1: input[0], 2: input[1]})
-        print("Output: %r" % output[8])
+        output = network.runWith((input[0], input[1]))
+        print("Output: %r" % output[0])
 
 
