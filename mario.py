@@ -69,7 +69,8 @@ def sendMaxFitness(pool):
 if len(sys.argv) > 1:
     loadPath = sys.argv[1]
     genNumber = sys.argv[2]
-    pool = Loader(loadPath, genNumber).getGenomes(modSigmoid)
+    pool = Loader(loadPath, genNumber).getGenomes(fitnessFunction)
+    pool.fitnessFn = fitnessFunction
 else:
     pool = NetworkPool(initialGenome, fitnessFunction)
 
