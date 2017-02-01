@@ -5,7 +5,10 @@
 import pprint
 import random
 import sys
+import os
 import pdb
+import datetime
+import json
 import traceback
 from .species import Species
 from .network import Network
@@ -13,6 +16,7 @@ from . import configuration
 
 class NetworkPool():
     def __init__(self, initialGenome, fitnessFunction):
+        print("Constructing pool.")
         self.fitnessFn = fitnessFunction
         self.config = configuration.getGlobalConfig()
         self.species = []
@@ -25,7 +29,10 @@ class NetworkPool():
         self.maxPrevFitness = 0.0
         self.maxGenome = None
         self.evaluatedGenomes = 0
-        self.generation = 0
+        self.generation = 1
+        
+        self.rtdir = "run-" + datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+        os.mkdir(self.rtdir)
 
     def addToSpecies(self, genome):
         for species in self.species:
@@ -79,7 +86,6 @@ class NetworkPool():
 
         for child in children: self.addToSpecies(child)
 
-        self.logData(self)
         self.generation += 1
 
     def generateOffspring(self, species):
@@ -141,15 +147,32 @@ class NetworkPool():
                 survived.append(species)
 
         self.species = survived
+    
+    def saveGenome(self, species, n, genome):
+        dataFile = open(os.path.join(self.rtdir, "gen-%d" % self.generation, "spc-%d-gnm-%d" % (species.id, n)), "w")
+        data = {"connections": sorted([(conn.connectionId, conn.source.nodeId, conn.sink.nodeId, conn.weight) for conn in genome.connections.values()
+                                if conn.enabled], key=lambda x: x[0]),
+        "nodes": sorted([(node.nodeId, node.nodeType.value) for node in genome.nodes.values()]),
+        "maxFitness": self.maxFitness,
+        "generation": self.generation,
+        "genomeId": n,
+        "speciesId": species.id}
+        
+        dataFile.write(json.dumps(data))
+        dataFile.close()
 
     def runOnce(self, inputsFn, sendGenome, sendOutput):
+        print("Running generation %d" % (self.generation))
+        os.mkdir(os.path.join(self.rtdir, "gen-%d" % self.generation))
         for species in self.species:
             for n, genome in enumerate(species.genomes):
+                print("Gen %d S %d G %d" % (self.generation, species.id, n+1))
                 network = Network(genome)
                 fitness = 0
                 sendGenome(self, species, genome, n)
+                nInputs = 0
                 for input in inputsFn():
-                    print(input)
+                    nInputs += 1
                     output = network.runWith(input)
                     sendOutput(output)
                     try:
@@ -160,6 +183,8 @@ class NetworkPool():
                         pprint.pprint(genome.connections)
                         sys.exit(1)
                 genome.fitness = fitness
+                
+                self.saveGenome(species, n, genome)
 
                 self.evaluatedGenomes += 1
 

@@ -6,13 +6,13 @@ SPECIES_ID = 1
 class Species():
     def __init__(self):
         global SPECIES_ID
-        SPECIES_ID += 1
         self.config = configuration.getGlobalConfig()
         self.id = SPECIES_ID
         self.genomes = []
         self.topFitness = 0.0
         self.averageFitness = 0.0
         self.staleness = 0
+        SPECIES_ID += 1
 
     def calculateAverageFitness(self):
         total = 0

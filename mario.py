@@ -12,47 +12,65 @@ configuration.loadConfig("Mario.toml")
 
 initialGenome = Genome([*(NodeGene(NodeType.SENSOR) for i in range(240)), NodeGene(NodeType.BIAS), *(NodeGene(NodeType.OUTPUT) for i in range(6))])
 
-if (not os.path.exists("ptol.fifo")):
-    os.mkfifo("ptol.fifo")
+class FR:
+    def __init__(self, f):
+        self.f = f
+    
+    def readline(self):
+        i = None
+        while not i:
+            i = self.f.readline()
+        return i
 
-if (not os.path.exists("ltop.fifo")):
-    os.mkfifo("ltop.fifo")
+    def write(self, data):
+        self.f.write(data)
+        self.f.flush()
 
-# Don't ask about the file open modes. No, really, don't.
-outFifo = open("ptol.fifo", "rb+", 0)
-inFifo = open("ltop.fifo", "rb+", 0)
+inFifo = FR(open("ltop", "w+"))
+outFifo = FR(open("ptol", "w+"))
 
 def fitnessFunction(input, output):
     return json.loads(inFifo.readline())["fitness"]
 
+class EndRun(RuntimeError):
+    pass
+
 def getInput():
-    ip = json.loads(inFifo.readline())
-    if (ip.get("noInput", False)):
-        raise StopIteration
-    yield ip["input"]
+    while 1:
+        ip = json.loads(inFifo.readline())
+        if (ip.get("noInput", False)):
+            raise StopIteration
+        if (ip.get("complete", False)):
+            raise EndRun
+        yield ip["input"]
 
 def sendOutput(output):
     data = json.dumps({"output": output}) + '\n'
-    outFifo.write(data.encode('utf-8'))
+    outFifo.write(data)
 
 def sendGenome(pool, species, genome, nthGenome):
-    data = {"connections": sorted([(conn.source, conn.sink) for conn in genome.connections.values()], key=lambda x: x[0]),
+    data = {"connections": sorted([(conn.source.nodeId, conn.sink.nodeId, conn.weight) for conn in genome.connections.values()
+                                    if conn.enabled], key=lambda x: x[0]),
             "nodes": sorted([node.nodeId for node in genome.nodes.values()]),
             "maxFitness": pool.maxFitness,
             "generation": pool.generation,
-            "genomeId": nthGenome,
+            "genpercent": str(100*(nthGenome + 1) / len(species.genomes))[:4],
+            "genomeId": nthGenome + 1,
             "speciesId": species.id}
     asJson = json.dumps(data)
-    outFifo.write((asJson + '\n').encode('utf-8'))
+    outFifo.write((asJson + '\n'))
 
 def sendMaxFitness(pool):
     data = json.dumps({"maxFitness": pool.maxFitness}) + '\n'
-    outFifo.write(data.encode('utf-8'))
+    outFifo.write(data)
 
 pool = NetworkPool(initialGenome, fitnessFunction)
 
-while (16 - pool.maxFitness) > 1.5:
-    pool.runOnce(getInput, sendGenome, sendOutput)
-    pool.nextGeneration()
-    print("Max fitness in generation %d (GID %d): %.20f | Staleness of species %d: %d" % (pool.generation, pool.maxGenome.id, pool.maxFitness, pool.maxSpecies.id, pool.maxSpecies.staleness))
+try:
+    while 1:
+        pool.runOnce(getInput, sendGenome, sendOutput)
+        pool.nextGeneration()
+        print("Max fitness in generation %d (GID %d): %.20f | Staleness of species %d: %d" % (pool.generation, pool.maxGenome.id, pool.maxFitness, pool.maxSpecies.id, pool.maxSpecies.staleness))
+except EndRun:
+    print("Run ends!")
     

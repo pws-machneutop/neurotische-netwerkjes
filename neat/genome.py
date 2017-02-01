@@ -96,7 +96,7 @@ class Genome():
         self.nodes[node.nodeId] = node
 
     def mutateConnection(self):
-        source_eligible = [node for node in self.nodes.values() if node.nodeType in (NodeType.SENSOR, NodeType.BIAS, NodeType.HIDDEN)]
+        source_eligible = [node for node in self.nodes.values() if node.nodeType in (NodeType.SENSOR, NodeType.BIAS, NodeType.HIDDEN, NodeType.OUTPUT)]
         sink_eligible = [node for node in self.nodes.values() if node.nodeType in (NodeType.HIDDEN, NodeType.OUTPUT)]
 
         graph = defaultdict(list)
@@ -200,8 +200,10 @@ class Genome():
         global GENOME_ID
         offspring = Genome()
 
-
-        excessThresh = min(max(cId for cId in self.connections.keys()), max(cId for cId in other.connections.keys()))
+        if (len(self.connections) == 0) or (len(other.connections) == 0):
+            excessThresh = 0
+        else:
+            excessThresh = min(max(cId for cId in self.connections.keys()), max(cId for cId in other.connections.keys()))
 
         matchingGenes = [(gene, other.connection(gene.connectionId)) for gene in self.connections.values() if other.connection(gene.connectionId)]
 

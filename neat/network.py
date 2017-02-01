@@ -24,7 +24,7 @@ class Node():
     def __hash__(self):
         return hash(self.nodeId)
 
-    def __call__(self, output, inputs=None):
+    def __call__(self, output, inputs=None, final_out=None):
         if (self.nodeType == NodeType.SENSOR):
             input = inputs.get(self.nodeId)
         else:
@@ -37,6 +37,9 @@ class Node():
             input = self.activationFunction(input)
 
         output[self.nodeId] = input
+        
+        if self.nodeType == NodeType.OUTPUT:
+            final_out[self.nodeId] = input
 
         return output
 
@@ -63,32 +66,25 @@ class Network():
 
     def runWith(self, inputdata=None):
         data_pool = defaultdict(float)
+        output_data = defaultdict(float)
 
         # First, run the inputs and bias nodes
         inputs = [node for node in self.nodes.values() if node.nodeType == NodeType.SENSOR or node.nodeType == NodeType.BIAS]
         inputs.sort(key=lambda node:node.nodeId)
 
         for ip in inputs:
-            ip(data_pool, dict(zip([node.nodeId for node in inputs], inputdata)))
+            ip(data_pool, dict(zip([node.nodeId for node in inputs], inputdata)), output_data)
 
 
         # Then the hidden nodes
-        hidden_nodes = [node for node in self.nodes.values() if node.nodeType == NodeType.HIDDEN]
-        nodes_left = {node.nodeId for node in hidden_nodes}
+        other_nodes = [node for node in self.nodes.values() if node.nodeType in (NodeType.OUTPUT, NodeType.HIDDEN)]
+        nodes_left = {node.nodeId for node in other_nodes}
 
         while (nodes_left):
-            for node in hidden_nodes:
+            for node in other_nodes:
                 if not (nodes_left & node.dependencies) and node.nodeId in nodes_left:
-                    node(data_pool, data_pool)
+                    node(data_pool, data_pool, output_data)
                     nodes_left -= {node.nodeId}
-
-        # Then the outputs
-
-        outputs = [node for node in self.nodes.values() if node.nodeType == NodeType.OUTPUT]
-        output_data = defaultdict(float)
-
-        for node in outputs:
-            node(output_data, data_pool)
 
         output_data = list(output_data.items())
         output_data.sort(key=lambda node: node[0])
