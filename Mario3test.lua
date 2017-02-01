@@ -2,7 +2,7 @@ json = require "json"
 
 
 
--- GET FROM FIFO						!!!!!!!!!!!
+-- GET FROM FIFO						
 ptol = io.open("ptol", "r")
 ltop = io.open("ltop", "w")
 
@@ -85,6 +85,7 @@ while not completion do
     nodes = data["nodes"]
     connections = data["connections"]
 
+    fitnessHighest = 0
     oldTime = 0
     time = 0
     
@@ -245,6 +246,19 @@ while not completion do
         score =  memory.readbyte(0x0717)*10 + memory.readbyte(0x0716)*2560
         fitness = marioX + time + score
 
+	if (fitness > fitnessHighest) then
+		fitnessHighest = fitness
+	end
+
+	if (fitnessHighest > fitness) then
+		fitnessTimer2 = fitnessTimer2 + 1
+	end
+
+	if (fitnessTimer2 > 6) then
+		fitnessTimer2 = 0
+		stuck = true
+	end
+
         if oldTime > time then
             fitnessTimer = fitnessTimer + 1;
         elseif (fitnessPrevious - time) < (fitness - time) then
@@ -252,12 +266,13 @@ while not completion do
         end
         if fitnessTimer > 3 then
             stuck = true
-            -- to fifo
-                writeLine({["noInput"] = 1})
-                break
-        else
-            stuck = false
         end
+
+	if stuck ==  true then
+                writeLine({["noInput"] = 1})
+		stuck = false
+                break
+	end
 
         fitnessPrevious = fitness;
 
@@ -269,7 +284,7 @@ while not completion do
             completion = false
         end 
 
-    -- SEND TO FIFO					!!!!!!!!
+    -- SEND TO FIFO					
         writeLine({["input"] = tiles})
 
         data = readLine()
