@@ -166,6 +166,7 @@ class NetworkPool():
         os.mkdir(os.path.join(self.rtdir, "gen-%d" % self.generation))
         for species in self.species:
             for n, genome in enumerate(species.genomes):
+                genome.id = n
                 print("Gen %d S %d G %d" % (self.generation, species.id, n+1))
                 network = Network(genome)
                 fitness = 0
@@ -176,7 +177,7 @@ class NetworkPool():
                     output = network.runWith(input)
                     sendOutput(output)
                     try:
-                        fitness += self.fitnessFn(input, output)
+                        fitness = self.fitnessFn(input, output)
                     except:
                         traceback.print_exc()
                         pprint.pprint(genome.nodes)
