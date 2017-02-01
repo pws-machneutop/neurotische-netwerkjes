@@ -79,6 +79,10 @@ class Genome():
 
         self.globalRank = 0
 
+    def addNode(self, nodeId, nodeType):
+        node = NodeGene(NodeType(nodeType), nodeId)
+        self.nodes[node.nodeId] = node
+
     def mutateNode(self):
         if (not self.connections):
             return False

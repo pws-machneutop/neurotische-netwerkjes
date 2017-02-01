@@ -15,15 +15,16 @@ from .network import Network
 from . import configuration
 
 class NetworkPool():
-    def __init__(self, initialGenome, fitnessFunction):
+    def __init__(self, initialGenome=None, fitnessFunction=None):
         print("Constructing pool.")
         self.fitnessFn = fitnessFunction
         self.config = configuration.getGlobalConfig()
         self.species = []
-        for i in range(self.config["pool"]["population"]):
-            initialGenome.mutate()
-            newGenome = initialGenome.copy()
-            self.addToSpecies(newGenome)
+        if initialGenome:
+            for i in range(self.config["pool"]["population"]):
+                initialGenome.mutate()
+                newGenome = initialGenome.copy()
+                self.addToSpecies(newGenome)
 
         self.maxFitness = 0.0
         self.maxPrevFitness = 0.0
@@ -34,7 +35,7 @@ class NetworkPool():
         self.rtdir = "run-" + datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
         os.mkdir(self.rtdir)
 
-    def addToSpecies(self, genome):
+    def addToSpecies(self, genome, speciesId=None):
         for species in self.species:
             if species.genomes[0].sameSpecies(genome):
                 species.genomes.append(genome)

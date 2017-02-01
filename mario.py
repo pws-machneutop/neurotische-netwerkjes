@@ -1,12 +1,14 @@
 from neat.pool import NetworkPool
-from neat.genome import Genome, NodeGene, ConnectionGene
+from neat.genome import Genome, NodeGene, ConnectionGene, modSigmoid
 from neat.nodetype import NodeType
+from neat.loader import Loader
 
 from neat import configuration
 
 import json
 import pprint
 import os
+import sys
 
 configuration.loadConfig("Mario.toml")
 
@@ -64,7 +66,12 @@ def sendMaxFitness(pool):
     data = json.dumps({"maxFitness": pool.maxFitness}) + '\n'
     outFifo.write(data)
 
-pool = NetworkPool(initialGenome, fitnessFunction)
+if len(sys.argv) > 1:
+    loadPath = sys.argv[1]
+    genNumber = sys.argv[2]
+    pool = Loader(loadPath, genNumber).getGenomes(modSigmoid)
+else:
+    pool = NetworkPool(initialGenome, fitnessFunction)
 
 try:
     while 1:
