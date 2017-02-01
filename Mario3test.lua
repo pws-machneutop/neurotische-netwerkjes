@@ -91,7 +91,7 @@ while not completion do
     while true do
 
             -- Temporary, development only
-            memory.writebyte(0x000ED, 05) -- Infinite Tanooki power-up
+            -- memory.writebyte(0x000ED, 05) -- Infinite Tanooki power-up
             -- memory.writebyte(0x05F1, 1) -- Disable timer
 
 
