@@ -16,7 +16,7 @@ GLOBAL_NODES = 1
 GENOME_ID = 1
 
 def modSigmoid(x):
-    return (1 / (1 + math.exp(-4.9*x)))
+    return (2 / (1 + math.exp(-4.9*x)))-1
 
 class NodeGene():
     def __init__(self, nodeType, nodeId=None, activationFunction = modSigmoid):

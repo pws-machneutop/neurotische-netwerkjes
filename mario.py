@@ -12,7 +12,7 @@ import sys
 
 configuration.loadConfig("Mario.toml")
 
-initialGenome = Genome([*(NodeGene(NodeType.SENSOR) for i in range(240)), NodeGene(NodeType.BIAS), *(NodeGene(NodeType.OUTPUT) for i in range(6))])
+initialGenome = Genome([*(NodeGene(NodeType.SENSOR) for i in range(240)), NodeGene(NodeType.BIAS), *(NodeGene(NodeType.OUTPUT) for i in range(4))])
 
 class FR:
     def __init__(self, f):
@@ -47,7 +47,7 @@ def getInput():
         yield ip["input"]
 
 def sendOutput(output):
-    data = json.dumps({"output": output}) + '\n'
+    data = json.dumps({"output": [*output[:2], 0, 0, *output[2:]]}) + '\n'
     outFifo.write(data)
 
 def sendGenome(pool, species, genome, nthGenome):

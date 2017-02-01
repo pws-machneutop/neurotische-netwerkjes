@@ -23,6 +23,6 @@ class Loader():
 
             pool.maxFitness = data["maxFitness"]
             pool.generation = data["generation"]
-            pool.addToSpecies(g, speciesId=data["speciesId"])
+            pool.addToSpecies(g, speciesId=data["speciesId"], staleness=data["staleness"])
 
         return pool

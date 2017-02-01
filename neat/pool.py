@@ -35,7 +35,7 @@ class NetworkPool():
         self.rtdir = "run-" + datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
         os.mkdir(self.rtdir)
 
-    def addToSpecies(self, genome, speciesId=None):
+    def addToSpecies(self, genome, speciesId=None, staleness=None):
         for species in self.species:
             if species.genomes[0].sameSpecies(genome):
                 species.genomes.append(genome)
@@ -43,6 +43,7 @@ class NetworkPool():
 
         newSpecies = Species()
         newSpecies.genomes.append(genome)
+        newSpecies.staleness = staleness or 0
         self.species.append(newSpecies)
 
     def rankGlobally(self):
@@ -146,6 +147,8 @@ class NetworkPool():
 
             if (species.staleness < self.config["speciation"]["stagnation_threshold"]) or (species.topFitness >= self.maxFitness):
                 survived.append(species)
+            else:
+                print("Removing stale species %d." % (species.id))
 
         self.species = survived
     
@@ -157,6 +160,7 @@ class NetworkPool():
         "maxFitness": self.maxFitness,
         "generation": self.generation,
         "genomeId": n,
+        "staleness": species.staleness,
         "speciesId": species.id}
         
         dataFile.write(json.dumps(data))
