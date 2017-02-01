@@ -51,6 +51,7 @@ while not completion do
     -- Fitness checking
     fitnessPrevious = 0
     fitnessTimer = 0
+    fitnessTimer2 = 0
 
     -- Finish block Y position
     memory.writebyte(0x00A9, 128);
