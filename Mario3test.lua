@@ -246,6 +246,10 @@ while not completion do
         score =  memory.readbyte(0x0717)*10 + memory.readbyte(0x0716)*2560
         fitness = marioX + time + score
 
+	if (marioY >= 400) then
+		stuck = true
+	end
+
 	if (fitness > fitnessHighest) then
 		fitnessHighest = fitness
 	end
