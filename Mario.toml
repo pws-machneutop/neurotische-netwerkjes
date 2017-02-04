@@ -1,10 +1,10 @@
 [compatibility]
-excess = 2.0
-disjoint = 2.0
-weights = 0.8
+excess = 1.0
+disjoint = 1.0
+weights = 0.4
 
 [speciation]
-species_difference = 1.2
+species_difference = 6.0
 stagnation_threshold = 10
 champion_threshold = 5
 
@@ -22,4 +22,4 @@ enable = 0.2
 disable = 0.4
 
 [pool]
-population = 300
+population = 150

@@ -172,8 +172,8 @@ class NetworkPool():
         os.mkdir(os.path.join(self.rtdir, "gen-%d" % self.generation))
         for species in self.species:
             for n, genome in enumerate(species.genomes):
-                genome.id = n
-                print("Gen %d S %d G %d" % (self.generation, species.id, n+1))
+                sys.stdout.write("Gen %d S %d G %s" % (self.generation, species.id, genome.idStr()))
+                sys.stdout.flush()
                 network = Network(genome)
                 fitness = 0
                 sendGenome(self, species, genome, n)
@@ -190,6 +190,7 @@ class NetworkPool():
                         pprint.pprint(genome.connections)
                         sys.exit(1)
                 genome.fitness = fitness
+                sys.stdout.write(" fitness: %d\n" % fitness)
                 
                 self.saveGenome(species, n, genome)
 

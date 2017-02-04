@@ -78,7 +78,7 @@ try:
     while 1:
         pool.runOnce(getInput, sendGenome, sendOutput)
         pool.nextGeneration()
-        print("Max fitness in generation %d (S %d G %d): %.20f | Staleness of species %d: %d" % (pool.generation, pool.maxSpecies.id, pool.maxGenome.id, pool.maxFitness, pool.maxSpecies.id, pool.maxSpecies.staleness))
+        print("Max fitness in generation %d (S %d G %s): %.20f | Staleness of species %d: %d" % (pool.generation, pool.maxSpecies.id, pool.maxGenome.idStr(), pool.maxFitness, pool.maxSpecies.id, pool.maxSpecies.staleness))
 except EndRun:
     print("Run ends!")
     

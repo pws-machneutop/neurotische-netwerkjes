@@ -8,10 +8,10 @@ from .nodetype import NodeType
 import itertools
 from pprint import pprint
 
+import uuid
+
 GLOBAL_INNOVATION = 1
 GLOBAL_NODES = 248
-
-GENOME_ID = 1
 
 def modSigmoid(x):
     return (2 / (1 + math.exp(-4.9*x)))-1
@@ -74,8 +74,8 @@ class Genome():
         self.nodes = {node.nodeId:node for node in (nodes or [])}
         self.connections = {connection.connectionId:connection for connection in (connections or [])}
         self.fitness = 0
-        self.id = GENOME_ID
-        GENOME_ID += 1
+
+        self.id = uuid.uuid4()
 
         self.globalRank = 0
 
@@ -142,19 +142,23 @@ class Genome():
     def mutate(self):
         if (random.random() < self.config["rates"]["mutation"]):
             self.mutateWeights()
+            self.updateId()
 
         n = self.config["rates"]["newnode"]
         while (random.random() < n):
             self.mutateNode()
+            self.updateId()
             n -= 1
 
         n = self.config["rates"]["newlink"]
         while (random.random() < n):
             self.mutateConnection()
+            self.updateId()
             n -= 1
         
         if (random.random() < self.config["rates"]["biasmut"]):
             self.mutateConnection(True)
+            self.updateId()
 
     def sameSpecies(self, other):
         c_1 = self.config["compatibility"]["excess"]
@@ -164,8 +168,9 @@ class Genome():
         # d = c_1*E/N + c_2*D/N + c_3 * W
         nGenes = (len(self.connections), len(other.connections))
 
-        N = max(len([i for i in self.nodes]), len([i for i in other.nodes])) + 1
+        #N = max(len([i for i in self.nodes.values() if i.nodeType != NodeType.SENSOR]), len([i for i in other.nodes.values() if i.nodeType != NodeType.SENSOR])) + 1
 
+        N = 1
         # Gene connectionIds below this threshold are disjoint. Uniques higher than this threshold are excess.
         if (len(self.connections) == 0) or (len(other.connections) == 0):
             excessThresh = 0
@@ -184,8 +189,9 @@ class Genome():
 
         disjoints = {gene for gene in otherGenes if gene.connectionId > excessThresh}
         excesses  = otherGenes - disjoints
-
-        return ((c_1 * len(excesses) + c_2 * len(disjoints)) / N + c_3 * avgweightDiff) < self.config["speciation"]["species_difference"]
+        delta = (c_1 * len(excesses) + c_2 * len(disjoints)) / N + c_3 * avgweightDiff
+        #print("Delta: %f" % delta)
+        return delta < self.config["speciation"]["species_difference"]
 
     def crossover(self, other):
         global GENOME_ID
@@ -217,9 +223,14 @@ class Genome():
 
         offspring.nodes = {i.nodeId:i for i in (set(self.nodes.values()) | set(other.nodes.values()))}
         
-        GENOME_ID += 1
-        offspring.id = GENOME_ID
+        offspring.updateId()
 
         return offspring
+
+    def updateId(self):
+        self.id = uuid.uuid4()
+
+    def idStr(self):
+        return __import__('base64').encodestring(self.id.bytes)[:-3].decode()
 
 
