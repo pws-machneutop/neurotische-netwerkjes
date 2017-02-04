@@ -12,7 +12,7 @@ import sys
 
 configuration.loadConfig("Mario.toml")
 
-initialGenome = Genome([*(NodeGene(NodeType.SENSOR) for i in range(240)), NodeGene(NodeType.BIAS), *(NodeGene(NodeType.OUTPUT) for i in range(4))])
+initialGenome = Genome([*(NodeGene(NodeType.SENSOR, i+1) for i in range(240)), NodeGene(NodeType.BIAS, 241), *(NodeGene(NodeType.OUTPUT, 242+i) for i in range(4))])
 
 class FR:
     def __init__(self, f):

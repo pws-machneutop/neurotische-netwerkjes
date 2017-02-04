@@ -22,9 +22,10 @@ class NetworkPool():
         self.species = []
         if initialGenome:
             for i in range(self.config["pool"]["population"]):
-                initialGenome.mutate()
-                newGenome = initialGenome.copy()
-                self.addToSpecies(newGenome)
+                print("Constructing genome %d" % i)
+                copy = initialGenome.copy()
+                copy.mutate()
+                self.addToSpecies(copy)
 
         self.maxFitness = 0.0
         self.maxPrevFitness = 0.0
@@ -64,11 +65,10 @@ class NetworkPool():
 
     def nextGeneration(self):
         self.cullSpecies(cutToOne=False)
-        self.rankGlobally()
         self.removeStaleSpecies()
         self.rankGlobally()
         for species in self.species: species.calculateAverageFitness()
-        #self.removeWeakSpecies()
+        self.removeWeakSpecies()
 
         self.totalFitness = self.totalAverageFitness()
 
@@ -167,6 +167,7 @@ class NetworkPool():
         dataFile.close()
 
     def runOnce(self, inputsFn, sendGenome, sendOutput):
+        pprint.pprint([(sp.id, len(sp.genomes)) for sp in self.species])
         print("Running generation %d" % (self.generation))
         os.mkdir(os.path.join(self.rtdir, "gen-%d" % self.generation))
         for species in self.species:

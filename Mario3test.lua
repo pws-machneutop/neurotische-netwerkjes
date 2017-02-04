@@ -1,8 +1,8 @@
 json = require "json"
+inspect = require "inspect"
 
 
-
--- GET FROM FIFO						
+-- GET FROM FIFO
 ptol = io.open("ptol", "r")
 ltop = io.open("ltop", "w")
 
@@ -19,9 +19,19 @@ function writeLine(data)
     ltop:flush()
 end
 
+function writeTiles()
+    tilesCopy = tiles
+    for k,v in pairs(tilesCopy) do
+        if (k > 240) then
+            tilesCopy[k] = nil
+        end
+    end
+    writeLine({["input"] = tilesCopy})
+end
+
 completion = false
 
--- BLOCK 2: INPUTS  
+-- BLOCK 2: INPUTS
 while not completion do
     savestate.loadslot(1)
     -- BLOCK 1: VARIABLE INITIATION
@@ -35,7 +45,7 @@ while not completion do
     -- Initiation array enemy for-loops
     enemyAlive = {}
     enemyVertical = {}
-    enemyHorizontal  = {} 
+    enemyHorizontal  = {}
     EnableEnemyRender = {}
 
     -- Variables to retain previous frame data
@@ -58,13 +68,7 @@ while not completion do
 
     -- Controller data
     controller = {}
-    outputs = {
-        false,
-        true,
-        false,
-        true,
-        false
-    }
+    outputs = {}
     outputsAbsolute = {}
     buttonNames = {
         "A",
@@ -89,7 +93,10 @@ while not completion do
     fitnessHighest = 0
     oldTime = 0
     time = 0
-    
+    fitnessVertical = 0
+    removePlant = 0
+
+
     while true do
 
             -- Temporary, development only
@@ -109,16 +116,16 @@ while not completion do
 
         -- Get Mario Coordinates
         marioX = memory.readbyte(0x00090) + memory.readbyte(0x00075) * 256 + 8
-        if memory.readbyte(0x00087) ~= 255 then 
+        if memory.readbyte(0x00087) ~= 255 then
             marioY = memory.readbyte(0x000A2) + memory.readbyte(0x00087) * 256
         else
             -- (The vertical Low byte is equal to 255 on the topmost row of the map)
-            marioY = 0 
+            marioY = 0
         end
 
         -- Check all tiles around Mario for hitboxes and update inputs (hitboxes)
         for i = 1, 241, 1 do
-            tileX = marioX - 128 + (16*(i-1))%256   
+            tileX = marioX - 128 + (16*(i-1))%256
             tileY = marioY - 128 + 16*math.floor((i-1)/16)
 
             tileHorizontalLow = math.floor(tileX/256)
@@ -127,15 +134,15 @@ while not completion do
                 tileVertical = math.floor(tileY/16)
             else
                 -- Dit is voor dezelfde redenen als bij marioY hierboven
-                tileVertical = 0			
+                tileVertical = 0
             end
             tileData = memory.readbyte(0x6000 + tileHorizontalLow*27*16 + tileHorizontalHigh + tileVertical*16)
-            if	tileData == 44  or tileData == 83  or tileData == 85  or tileData == 87  or tileData == 95  or tileData == 97  or tileData == 99  or tileData == 103 or 
-                tileData == 110 or tileData == 112 or tileData == 121 or tileData == 173 or tileData == 174 or tileData == 177 or 
-                tileData == 178 or tileData == 186 or tileData == 187 or tileData == 37  or tileData == 38  or tileData == 39  or tileData == 80  or 
-                tileData == 81  or tileData == 82  or tileData == 160 or tileData == 161 or tileData == 162 or tileData == 226 or tileData == 227 or 
-                tileData == 228 or tileData == 46  or tileData ==  49 or tileData == 105 or tileData == 107 or tileData == 109 or tileData == 113 or tileData == 114 or 
-                tileData == 116 or tileData == 154 or tileData == 155 or tileData == 156 or tileData == 157 or tileData == 158 or tileData == 167 or tileData == 168 or 
+            if	tileData == 44  or tileData == 83  or tileData == 85  or tileData == 87  or tileData == 95  or tileData == 97  or tileData == 99  or tileData == 103 or
+                tileData == 110 or tileData == 112 or tileData == 121 or tileData == 173 or tileData == 174 or tileData == 177 or
+                tileData == 178 or tileData == 186 or tileData == 187 or tileData == 37  or tileData == 38  or tileData == 39  or tileData == 80  or
+                tileData == 81  or tileData == 82  or tileData == 160 or tileData == 161 or tileData == 162 or tileData == 226 or tileData == 227 or
+                tileData == 228 or tileData == 46  or tileData ==  49 or tileData == 105 or tileData == 107 or tileData == 109 or tileData == 113 or tileData == 114 or
+                tileData == 116 or tileData == 154 or tileData == 155 or tileData == 156 or tileData == 157 or tileData == 158 or tileData == 167 or tileData == 168 or
                 tileData == 169 or tileData == 170 or tileData == 171 or tileData == 182 or tileData == 183 or tileData == 184 or tileData == 185
             then
                 tiles[i] = 1
@@ -156,17 +163,17 @@ while not completion do
             enemyVertical[i] = math.floor(enemyY / 16) + 9 - math.floor(marioY/16)
         end
        -- Circumvent enemy position overflow - No enemies render outside the two lines
-       for i = 1, 5, 1 do 
+       for i = 1, 5, 1 do
             if enemyHorizontal[i] < -12 or enemyHorizontal[i] > -3 then
-                EnableEnemyRender[i] = 0	
+                EnableEnemyRender[i] = 0
             else
                 EnableEnemyRender[i] = 1
             end
-        end  
+        end
         -- Update inputs (enemies)
         for i = 1, 5, 1 do
             if EnableEnemyRender[i] == 1 then
-                if enemyAlive[i] == 2 or enemyAlive[i] == 5 then			
+                if enemyAlive[i] == 2 or enemyAlive[i] == 5 then
                         tiles[(enemyVertical[i])*16 + enemyHorizontal[i]] = -1
                 end
             end
@@ -219,19 +226,19 @@ while not completion do
         for layer = 1, 15, 1 do
             for i = 1, 16, 1 do
                 sqX = 4 + (i-1) * 4
-                sqY = 12 + (layer-1) * 4 
+                sqY = 12 + (layer-1) * 4
                 -- Enemies and projectiles
-                if tiles[(layer-1)*16+i] == -1 then       
-                    gui.drawBox(sqX, sqY, sqX + 3, sqY + 3, 0xFF000000, 0xFF000000)            
-                else 
+                if tiles[(layer-1)*16+i] == -1 then
+                    gui.drawBox(sqX, sqY, sqX + 3, sqY + 3, 0xFF000000, 0xFF000000)
+                else
                 -- Hitboxes
                 if tiles[(layer-1)*16+i] == 1 then
                     gui.drawBox(sqX, sqY, sqX + 3, sqY + 3, 0xffffffff, 0xffffffff)
                 else
                 -- Empty space
-                    gui.drawBox(sqX, sqY, sqX + 3, sqY + 3, 0x000000, 0x000000) 
+                    gui.drawBox(sqX, sqY, sqX + 3, sqY + 3, 0x000000, 0x000000)
                 end
-                end       
+                end
             end
         end
 
@@ -242,12 +249,32 @@ while not completion do
 
     -- BLOCK 3: GENOME DATA AND FITNESS
 
-        oldTime = time
-        time = memory.readbyte(0x05EE)*100 + memory.readbyte(0x05EF)*10 + memory.readbyte(0x05F0)
-        score =  memory.readbyte(0x0717)*10 + memory.readbyte(0x0716)*2560
-        fitness = marioX + time + score
+		--Remove plant
+		if  memory.readbyte(0x00075) == 1 and removePlant == 0 then
+			memory.writebyte(0x665,0)
+			memory.writebyte(0x664,0)
+			removePlant = 1
+		end
+		if memory.readbyte(0x0075) == 6 or memory.readbyte(0x0075) == 7 then
+			memory.writebyte(0x664,0)
+		end
 
-	if (marioY >= 400) then
+
+        oldTime = time
+        time = memory.readbyte(0x05EE)*100 + memory.readbyte(0x05EF)*10 + memory.readbyte(0x05F0)-300
+        score =  memory.readbyte(0x0717)*10 + memory.readbyte(0x0716)*2560
+
+        if fitnessVertical == 0 and marioY <= 340 then
+			fitnessVertical = 1
+		end
+
+        fitness = marioX + time + fitnessVertical*250
+
+	if marioY >= 390 then
+		stuck = true
+	end
+
+	if (memory.readbyte(0x0303) == 3 or memory.readbyte(0x0303) == 17) and memory.readbyte(0x00ED) ~= 1 then
 		stuck = true
 	end
 
@@ -259,7 +286,7 @@ while not completion do
 		fitnessTimer2 = fitnessTimer2 + 1
 	end
 
-	if (fitnessTimer2 > 6) then
+	if (fitnessTimer2 > 600) then
 		fitnessTimer2 = 0
 		stuck = true
 	end
@@ -273,7 +300,7 @@ while not completion do
             stuck = true
         end
 
-	if stuck ==  true then
+	if stuck == true then
                 writeLine({["noInput"] = 1})
 		stuck = false
                 break
@@ -287,10 +314,10 @@ while not completion do
             writeLine({["complete"] = 1})
         else
             completion = false
-        end 
+        end
 
-    -- SEND TO FIFO					
-        writeLine({["input"] = tiles})
+    -- SEND TO FIFO
+        writeTiles()
 
         data = readLine()
         outputs = data["output"]
@@ -299,16 +326,17 @@ while not completion do
 
 
         for i = 1, 6 do
-            if outputs[i] > 0.9 then
+            if outputs[i] > 0.95 then
                 outputsAbsolute[i] = true
             end
-            if outputs[i] < 0.9 then
+            if outputs[i] < 0.95 then
                 outputsAbsolute[i] = false
             end
         end
 
 
         gui.drawBox(0,210,255,255, 0x8fffffff, 0xDfffffff)
+
 
         gui.drawText(10, 220, "Gen: " .. generation, 0xff000000, 0x00000000, 10)
         gui.drawText(65, 220, "Species: " .. species, 0xff000000, 0x00000000, 10)
@@ -320,7 +348,7 @@ while not completion do
 
 
 
-    -- BLOCK 4: OUTPUTS AND NEURAL NETWORK VISUALISATION 
+    -- BLOCK 4: OUTPUTS AND NEURAL NETWORK VISUALISATION
 
         -- Refresh Outputs
         for i = 1, 6 do
@@ -328,7 +356,7 @@ while not completion do
         end
 
         for i = 1, 6 do
-            controller["P1 " .. buttonNames[i]] = outputsAbsolute[i] 
+            controller["P1 " .. buttonNames[i]] = outputsAbsolute[i]
         end
         joypad.set(controller)
 
@@ -336,15 +364,15 @@ while not completion do
         for i = 1, 6 do
             if outputs[i] == false then
                 gui.drawText(220, 4 + 8*i, buttonNames[i], 0xff000000, 0x00000000, 10 )
-                gui.drawBox(215, 8 + 8*i, 218, 11 + 8*i, 0xff888888, 0x40000000)  
+                gui.drawBox(215, 8 + 8*i, 218, 11 + 8*i, 0xff888888, 0x40000000)
             end
             if outputs[i] == true then
                 gui.drawText(220, 4 + 8*i, buttonNames[i], 0xff276d1c, 0x00000000, 10 )
-                gui.drawBox(215, 8 + 8*i, 218, 11 + 8*i, 0xffffffff, 0xffffffff)  
+                gui.drawBox(215, 8 + 8*i, 218, 11 + 8*i, 0xffffffff, 0xffffffff)
             end
         end
 
-    --[[	
+    --[[
         for i = 1, 247, 1 do
             if i <= 240 then
                 nodeX[i] = 4 + 4 * (i%16)
@@ -358,7 +386,7 @@ while not completion do
                 nodeX[i] = 215
                 nodeY[i] = 8 + 8*(i-241)
             do
-        end	
+        end
 
         for i = 1, 247, 1 do
             nodeDrawn[i] = true
@@ -368,11 +396,11 @@ while not completion do
             nodeDrawn[i] = false
         end
 
-        for i = 247, #nodes do 	
+        for i = 247, #nodes do
             nodeNumber = nodes[i]
             if nodeDrawn[nodeNumber] == false then
-                nodeX[nodeNumber] = 147 + math.floor((i-247)/8)*20	
-                nodeY[nodeNumber] = 12 + ((i-247)%8)*10 
+                nodeX[nodeNumber] = 147 + math.floor((i-247)/8)*20
+                nodeY[nodeNumber] = 12 + ((i-247)%8)*10
                 nodeDrawn[nodeNumber] = true
             end
         end
@@ -395,8 +423,8 @@ while not completion do
         end
 
 
-        for i = 1, #connections do	
-            source = connection[i][1] 
+        for i = 1, #connections do
+            source = connection[i][1]
             sink = connection[i][2]
             weight = connection[i][3]
 
@@ -411,11 +439,11 @@ while not completion do
             end
 
             if nodeDrawn[source] and nodeDrawn[sink] then
-                if nodeOutput[source] == 0 then 
+                if nodeOutput[source] == 0 then
                     if weight >= 0 then
                         gui.drawLine(nodeX[source]+1, nodeY[source]+1, nodeX[sink]+1, nodeY[sink]+1, 0x4F00ff00)
                     end
-                    if weight < 0 then 
+                    if weight < 0 then
                         gui.drawLine(nodeX[source]+1, nodeY[source]+1, nodeX[sink]+1, nodeY[sink]+1, 0x4Fff0000)
                     end
                 end
@@ -423,23 +451,23 @@ while not completion do
                     if weight >= 0 then
                         gui.drawLine(nodeX[source]+1, nodeY[source]+1, nodeX[sink]+1, nodeY[sink]+1, 0xFF00ff00)
                     end
-                    if weight < 0 then 
+                    if weight < 0 then
                         gui.drawLine(nodeX[source]+1, nodeY[source]+1, nodeX[sink]+1, nodeY[sink]+1, 0xFFff0000)
                     end
                 end
-            end	
+            end
         end
 
         for i = 248, #nodes do
             if nodeDrawn[i] == true then
                 if nodeOuput[i] == 0 then
-                    gui.drawBox(nodeX[i], nodeY[i], nodeX[i]+3, nodeY[i]+3, 0xff888888, 0x40000000)  
+                    gui.drawBox(nodeX[i], nodeY[i], nodeX[i]+3, nodeY[i]+3, 0xff888888, 0x40000000)
                 end
                 if nodeOutput[i] == 1 then
-                    gui.drawBox(nodeX[i], nodeY[i], nodeX[i]+3, nodeY[i]+3, 0xffffffff, 0xffffffff)  
+                    gui.drawBox(nodeX[i], nodeY[i], nodeX[i]+3, nodeY[i]+3, 0xffffffff, 0xffffffff)
                 end
                 if nodeOutput[i] == -1 then
-                    gui.drawBox(nodeX[i], nodeY[i], nodeX[i]+3, nodeY[i]+3, 0xff000000, 0xff000000)  
+                    gui.drawBox(nodeX[i], nodeY[i], nodeX[i]+3, nodeY[i]+3, 0xff000000, 0xff000000)
                 end
             end
         end

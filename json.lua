@@ -60,6 +60,8 @@ local function encode_table(val, stack)
       n = n + 1
     end
     if n ~= #val then
+        print("Writing data ")
+        print(inspect(val))
       error("invalid table: sparse array")
     end
     -- Encode

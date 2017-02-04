@@ -1,5 +1,7 @@
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, OrderedDict
 from .nodetype import NodeType
+from pprint import pprint
+import random
 import sys
 
 class Node():
@@ -23,12 +25,26 @@ class Node():
 
     def __hash__(self):
         return hash(self.nodeId)
+    
+    def __repr__(self):
+        if self.nodeType in (NodeType.SENSOR, NodeType.BIAS):
+            return "Node(#%r, %r, %r)" % (self.nodeId, self.nodeType,
+                    self.weights)
+        return "Node(#%r, %r, %s, %r)" % (self.nodeId, self.nodeType,
+                self.activationFunction.__name__, self.weights)
 
     def __call__(self, output, inputs=None, final_out=None):
         if (self.nodeType == NodeType.SENSOR):
             input = inputs.get(self.nodeId)
         else:
-            input = sum(inputs.get(dependency)*self.weights[dependency] for dependency in self.dependencies)
+            input = 0
+            for dependency in self.dependencies:
+                val = inputs.get(dependency, 0.0)
+                cW = self.weights.get(dependency, 0.0)
+                if (val == None):
+                    inputs[dependency] = 0.0
+                    val = 0.0
+                input += val * cW
 
         if (self.nodeType == NodeType.BIAS):
             input = 1.0
@@ -43,26 +59,21 @@ class Node():
 
         return output
 
-    def __repr__(self):
-        if self.nodeType in (NodeType.SENSOR, NodeType.BIAS):
-            return "Node(#%r, %r, %r)" % (self.nodeId, self.nodeType,
-                    self.weights)
-        return "Node(#%r, %r, %s, %r)" % (self.nodeId, self.nodeType,
-                self.activationFunction.__name__, self.weights)
 
 class Network():
     def __init__(self, genome):
-        self.nodes = dict(self.createNodes(genome))
+        self.nodes = OrderedDict(sorted(self.createNodes(genome), key=lambda x:x[0]))
+        self.values = defaultdict(float)
 
+    def node(self, nodeId):
+        return self.nodes[nodeId]
+        
     def createNodes(self, genome):
         for nGene in genome.nodes.values():
             connections = [c for c in genome.connections.values()
                     if c.sink == nGene or c.source == nGene]
             node = Node(nGene, list(connections))
             yield (node.nodeId, node)
-
-    def node(self, nodeId):
-        return self.nodes[nodeId]
 
     def runWith(self, inputdata=None):
         data_pool = defaultdict(float)
@@ -73,19 +84,16 @@ class Network():
         inputs.sort(key=lambda node:node.nodeId)
 
         for ip in inputs:
-            ip(data_pool, dict(zip([node.nodeId for node in inputs], inputdata)), output_data)
+            ip(self.values, dict(zip([node.nodeId for node in inputs], inputdata)), output_data)
 
 
-        # Then the hidden nodes
+        # Then the other nodes
         other_nodes = [node for node in self.nodes.values() if node.nodeType in (NodeType.OUTPUT, NodeType.HIDDEN)]
-        nodes_left = {node.nodeId for node in other_nodes}
 
-        while (nodes_left):
-            for node in other_nodes:
-                if not (nodes_left & node.dependencies) and node.nodeId in nodes_left:
-                    node(data_pool, data_pool, output_data)
-                    nodes_left -= {node.nodeId}
+        for node in other_nodes:
+            node(self.values, self.values, output_data)
 
+        self.values.update(output_data)
         output_data = list(output_data.items())
         output_data.sort(key=lambda node: node[0])
 
