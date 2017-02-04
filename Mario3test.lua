@@ -264,10 +264,6 @@ while not completion do
         time = memory.readbyte(0x05EE)*100 + memory.readbyte(0x05EF)*10 + memory.readbyte(0x05F0)-300
         score =  memory.readbyte(0x0717)*10 + memory.readbyte(0x0716)*2560
 
-        if fitnessVertical == 0 and marioY <= 340 then
-			fitnessVertical = 1
-		end
-
         fitness = marioX + time + fitnessVertical*250
 
 	if marioY >= 390 then
